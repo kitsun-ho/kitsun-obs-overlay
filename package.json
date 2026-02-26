@@ -10,8 +10,16 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
+    "@nuxt/ui": "^3.3.0",
     "nuxt": "^4.3.1",
+    "tailwindcss": "^4.1.0",
+    "tmi.js": "^1.8.5",
     "vue": "^3.5.28",
-    "vue-router": "^4.6.4"
+    "vue-router": "^4.6.4",
+    "youtube-chat": "^2.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.5",
+    "@types/tmi.js": "^1.8.6"
   }
 }
