@@ -1,0 +1,43 @@
+add_newline = false
+
+# 左邊：dir -> git -> node -> time
+format = """
+[](fg:#4B4B4B)$directory[](fg:#4B4B4B bg:#5F5FD7)$git_branch$git_status[](fg:#5F5FD7 bg:#3FAF75)$nodejs[](fg:#3FAF75 bg:#303030)$time[](fg:#303030)\
+ $character
+"""
+
+# 右邊（你圖右側那種時間膠囊）：如果你想放右邊也可以
+# right_format = """$cmd_duration"""
+
+[character]
+success_symbol = "[❯](bold green)"
+error_symbol = "[❯](bold red)"
+
+[directory]
+style = "fg:#EDEDED bg:#4B4B4B"
+format = "[ $path ]($style)"
+truncate_to_repo = true
+truncation_symbol = "…/"
+
+[git_branch]
+style = "fg:#FFFFFF bg:#5F5FD7"
+format = "[ $branch ]($style)"
+
+[git_status]
+style = "fg:#FFFFFF bg:#5F5FD7"
+format = "[$all_status$ahead_behind ]($style)"
+
+[nodejs]
+style = "fg:#0B1A12 bg:#3FAF75"
+format = "[ $version ]($style)"
+detect_files = ["package.json", "pnpm-lock.yaml"]
+
+[time]
+disabled = false
+time_format = "%H:%M:%S"
+style = "fg:#EDEDED bg:#303030"
+format = "[ $time ]($style)"
+
+[cmd_duration]
+min_time = 500
+format = "[ $duration ](fg:#999999)"
