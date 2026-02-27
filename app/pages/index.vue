@@ -1,36 +1,41 @@
 <template>
-  <main class="p">
-    <h1 class="h">kitsun OBS overlay</h1>
-    <p class="muted">把 Twitch + YouTube 聊天室合併成 OBS Browser Source。</p>
+  <main class="ks-p">
+    <h1 class="ks-h">kitsun OBS overlay</h1>
+    <p class="ks-muted">把 Twitch + YouTube 聊天室合併成 OBS Browser Source。</p>
 
-    <section class="card">
-      <h2 class="h2">快速設定</h2>
-      <p class="muted">輸入 ID 後按 Submit，自動導到正確 Overlay；也可以一鍵複製 OBS 用的 URL。</p>
+    <section class="ks-card">
+      <text-h2 class="ks-h2" style="margin-bottom:4px">快速設定</text-h2>
+      <p class="ks-muted">輸入 ID 後按 Submit，自動導到正確 Overlay；也可以一鍵複製 OBS 用的 URL。</p>
 
-      <form class="grid" @submit.prevent="openChat(true)">
-        <div class="field">
-          <label class="label">Twitch channel（可逗號多個）</label>
-          <input v-model.trim="chatForm.twitch" class="input" placeholder="e.g. kenho, monstercat" />
+      <form class="ks-grid" @submit.prevent="openChat(true)">
+        <div class="ks-field">
+          <label class="ks-label">Twitch channel（可逗號多個）</label>
+          <input v-model.trim="chatForm.twitch" class="ks-input" placeholder="e.g. kenho, monstercat" />
         </div>
 
-        <div class="field">
-          <label class="label">YouTube ID / URL（Channel ID 或 Live/Video ID；可逗號多個）</label>
-          <input v-model.trim="chatForm.youtube" class="input" placeholder="e.g. UCxxxx... 或 11碼 videoId 或 https://youtu.be/..." />
-          <div class="hint">判定：{{ youtubeInferenceLabel }}</div>
+        <div class="ks-field">
+          <label class="ks-label">YouTube ID / URL（Channel ID 或 Live/Video ID；可逗號多個）</label>
+          <input v-model.trim="chatForm.youtube" class="ks-input" placeholder="e.g. UCxxxx... 或 11碼 videoId 或 https://youtu.be/..." />
+          <div class="ks-hint">判定：{{ youtubeInferenceLabel }}</div>
         </div>
 
-        <div class="row">
-          <div class="field">
-            <label class="label">Theme</label>
-            <select v-model="chatForm.theme" class="select">
+        <div class="ks-row">
+          <div class="ks-field">
+            <label class="ks-label">Theme</label>
+            <select v-model="chatForm.theme" class="ks-select">
               <option value="dark">dark</option>
               <option value="light">light</option>
             </select>
           </div>
 
-          <div class="field">
-            <label class="label">Max</label>
-            <input v-model.number="chatForm.max" class="input" type="number" min="10" max="500" />
+          <div class="ks-field">
+            <label class="ks-label">Max</label>
+            <input v-model.number="chatForm.max" class="ks-input" type="number" min="10" max="500" />
+          </div>
+
+          <div class="ks-field">
+            <label class="ks-label">TTL (sec)</label>
+            <input v-model.number="chatForm.ttl" class="ks-input" type="number" min="1" max="300" />
           </div>
 
           <label class="check">
@@ -42,29 +47,34 @@
             <input v-model="chatForm.showPlatform" type="checkbox" />
             show platform
           </label>
+
+          <label class="check">
+            <input v-model="chatForm.autoRemove" type="checkbox" />
+            auto remove
+          </label>
         </div>
 
-        <div class="row">
-          <label class="check">
+        <div class="ks-row">
+          <label class="ks-check">
             <input v-model="saveToStorage" type="checkbox" />
             同時存到 localStorage（方便你在同一個瀏覽器快速重開）
           </label>
         </div>
 
-        <div class="actions">
-          <button class="btn" type="submit">Submit → Open Chat Overlay</button>
-          <button class="btn ghost" type="button" @click="copy(chatUrl)">Copy OBS URL</button>
-          <NuxtLink class="btn ghost" :to="chatPathOnly">Open (storage URL)</NuxtLink>
+        <div class="ks-actions">
+          <button class="ks-btn" type="submit">Submit → Open Chat Overlay</button>
+          <button class="ks-btn ks-ghost" type="button" @click="copy(chatUrl)">Copy OBS URL</button>
+          <NuxtLink class="ks-btn ks-ghost" :to="chatPathOnly">Open (storage URL)</NuxtLink>
         </div>
 
-        <div class="hint">OBS 最穩的做法是用「帶 query 的 URL」；localStorage 只會存在『那個瀏覽器/OBS 來源』自己的儲存空間。</div>
+        <div class="ks-hint">OBS 最穩的做法是用「帶 query 的 URL」；localStorage 只會存在『那個瀏覽器/OBS 來源』自己的儲存空間。</div>
       </form>
     </section>
 
-    <section class="card">
-      <h2 class="h2">Chat Overlay</h2>
-      <p class="muted">範例（改成你的頻道/ID）：</p>
-      <ul class="list">
+    <section class="ks-card">
+      <text-h2 class="ks-h2">Chat Overlay</text-h2>
+      <p class="ks-muted">範例（改成你的頻道/ID）：</p>
+      <ul class="ks-list">
         <li>
           <NuxtLink to="/overlay/chat?twitch=YOUR_TWITCH_CHANNEL&youtubeChannelId=YOUR_YOUTUBE_CHANNEL_ID">/overlay/chat?twitch=...&youtubeChannelId=...</NuxtLink>
         </li>
@@ -74,26 +84,24 @@
       </ul>
     </section>
 
-    <section class="card">
-      <h2 class="h2">Frame Overlay</h2>
-      <p class="muted">透明框架（拿來疊在 Webcam / Chat 上方）：</p>
-      <div class="actions" style="margin-bottom: 10px;">
-        <NuxtLink class="btn ghost" to="/overlay/frame">Open Frame Overlay</NuxtLink>
-        <button class="btn ghost" type="button" @click="copy(frameUrl)">Copy Frame URL</button>
+
+    <section class="ks-card">
+      <text-h2 class="ks-h2">Datetime Overlay</text-h2>
+      <p class="ks-muted">顯示目前時間，24小時制並補零：</p>
+      <div class="ks-actions" style="margin-bottom: 10px;">
+        <NuxtLink class="ks-btn ks-ghost" to="/overlay/datetime">Open Datetime</NuxtLink>
+        <button class="ks-btn ks-ghost" type="button" @click="copy(datetimeUrl)">Copy Datetime URL</button>
       </div>
-      <ul class="list">
+      <ul class="ks-list">
         <li>
-          <NuxtLink :to="framePathOnly">/overlay/frame</NuxtLink>
-        </li>
-        <li>
-          <NuxtLink :to="framePathWithQuery">/overlay/frame?title=...&accent=...</NuxtLink>
+          <NuxtLink to="/overlay/datetime">/overlay/datetime</NuxtLink>
         </li>
       </ul>
     </section>
 
-    <section class="card">
-      <h2 class="h2">Dev</h2>
-      <p class="muted">`pnpm dev --host 0.0.0.0 --port 3000`</p>
+    <section class="ks-card">
+      <text-h2 class="ks-h2">Dev</text-h2>
+      <p class="ks-muted">`pnpm dev --host 0.0.0.0 --port 3000`</p>
     </section>
   </main>
 </template>
@@ -109,19 +117,15 @@ type ChatStorageConfig = {
   max?: number
   compact?: boolean
   showPlatform?: boolean
+  ttl?: number
+  autoRemove?: boolean
 }
 
-type FrameStorageConfig = {
-  title?: string
-  subtitle?: string
-  accent?: string
-  accent2?: string
-}
+
 
 type OverlayStorageV1 = {
   v: 1
   chat?: ChatStorageConfig
-  frame?: FrameStorageConfig
 }
 
 const STORAGE_KEY = 'kitsun.obsOverlay.v1'
@@ -222,7 +226,9 @@ const chatForm = reactive({
   theme: 'dark' as 'dark' | 'light',
   max: 60,
   compact: false,
-  showPlatform: true
+  showPlatform: true,
+  ttl: 8,
+  autoRemove: true
 })
 
 onMounted(() => {
@@ -232,8 +238,10 @@ onMounted(() => {
     chatForm.youtube = stored.chat.youtubeChannelId ?? stored.chat.youtubeLiveId ?? ''
     chatForm.theme = stored.chat.theme ?? 'dark'
     chatForm.max = stored.chat.max ?? 60
+    chatForm.ttl = stored.chat.ttl ?? 8
     chatForm.compact = stored.chat.compact ?? false
     chatForm.showPlatform = stored.chat.showPlatform ?? true
+    chatForm.autoRemove = stored.chat.autoRemove ?? true
   }
 })
 
@@ -262,8 +270,10 @@ function buildChatParams() {
 
   params.set('theme', chatForm.theme)
   params.set('max', String(chatForm.max))
+  params.set('ttl', String(chatForm.ttl))
   if (chatForm.compact) params.set('compact', '1')
   if (!chatForm.showPlatform) params.set('showPlatform', '0')
+  if (!chatForm.autoRemove) params.set('autoRemove', '0')
 
   return params
 }
@@ -300,20 +310,12 @@ async function openChat(withQuery: boolean) {
   }
 }
 
-const framePathOnly = '/overlay/frame'
-const framePathWithQuery = computed(() => {
-  const params = new URLSearchParams({
-    title: 'KEN LIVE',
-    subtitle: 'YT + Twitch',
-    accent: '#a970ff',
-    accent2: '#00dc82'
-  })
-  return `${framePathOnly}?${params.toString()}`
-})
 
-const frameUrl = computed(() => {
-  if (!import.meta.client) return framePathWithQuery.value
-  return `${window.location.origin}${framePathWithQuery.value}`
+
+const datetimePathOnly = '/overlay/datetime'
+const datetimeUrl = computed(() => {
+  if (!import.meta.client) return datetimePathOnly
+  return `${window.location.origin}${datetimePathOnly}`
 })
 
 async function copy(value: string) {
@@ -327,60 +329,60 @@ async function copy(value: string) {
 </script>
 
 <style scoped>
-.p {
+.ks-p {
   padding: 24px;
   max-width: 900px;
 }
-.h {
+.ks-h {
   font-size: 28px;
   font-weight: 900;
   margin: 0 0 8px;
 }
-.h2 {
+.ks-h2 {
   font-size: 18px;
   font-weight: 800;
-  margin: 0 0 8px;
+  margin: 0;
 }
-.muted {
+.ks-muted {
   opacity: 0.75;
   margin: 0 0 12px;
 }
-.card {
+.ks-card {
   border: 1px solid rgba(127, 127, 127, 0.25);
   border-radius: 14px;
   padding: 16px;
   margin-top: 16px;
 }
-.list {
+.ks-list {
   margin: 0;
   padding-left: 18px;
 }
 
-.grid {
+.ks-grid {
   display: grid;
   gap: 14px;
 }
 
-.row {
+.ks-row {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
   align-items: end;
 }
 
-.field {
+.ks-field {
   display: grid;
   gap: 6px;
 }
 
-.label {
+.ks-label {
   font-size: 12px;
   font-weight: 800;
   opacity: 0.9;
 }
 
-.input,
-.select {
+.ks-input,
+.ks-select {
   appearance: none;
   border: 1px solid rgba(127, 127, 127, 0.3);
   border-radius: 10px;
@@ -390,11 +392,11 @@ async function copy(value: string) {
   min-width: 240px;
 }
 
-.select {
+.ks-select {
   min-width: 120px;
 }
 
-.check {
+.ks-check {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -403,19 +405,19 @@ async function copy(value: string) {
   user-select: none;
 }
 
-.hint {
+.ks-hint {
   font-size: 12px;
   opacity: 0.72;
 }
 
-.actions {
+.ks-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
   align-items: center;
 }
 
-.btn {
+.ks-btn {
   border: 1px solid rgba(127, 127, 127, 0.35);
   border-radius: 12px;
   padding: 10px 12px;
@@ -426,7 +428,7 @@ async function copy(value: string) {
   cursor: pointer;
 }
 
-.btn.ghost {
+.ks-btn.ks-ghost {
   background: transparent;
 }
 </style>

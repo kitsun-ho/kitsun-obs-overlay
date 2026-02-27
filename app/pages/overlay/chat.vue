@@ -1,6 +1,6 @@
 <template>
-  <div class="overlay" :class="themeClass">
-    <div ref="scroller" class="chat" :class="{ compact }">
+  <div class="overlay" :class="themeClass" :style="rootVars">
+    <div ref="scroller" class="chat" :class="{ compact, animate }">
       <div v-for="m in messages" :key="m.id" class="msg" :class="m.platform">
         <span v-if="showPlatform" class="platform">{{ platformLabel(m.platform) }}</span>
         <span class="author" :style="authorStyle(m)">{{ m.author.name }}</span>
@@ -39,6 +39,9 @@ type ChatStorageConfig = {
   max?: number
   compact?: boolean
   showPlatform?: boolean
+  accent?: string
+  accent2?: string
+  animate?: boolean
 }
 
 type OverlayStorageV1 = {
@@ -98,6 +101,34 @@ const maxMessages = computed(() => {
   return Number.isFinite(value) ? Math.min(Math.max(value, 10), 500) : 60
 })
 
+const ttlSeconds = computed(() => {
+  return getNumber('ttl', 'ttl', 8)
+})
+
+const _timers = new Map<string, number>()
+
+const autoRemove = computed(() => getBool('autoRemove', 'autoRemove', true))
+
+function scheduleRemoval(id: string) {
+  // clear existing
+  const existing = _timers.get(id)
+  if (existing !== undefined) clearTimeout(existing)
+  const t = window.setTimeout(() => removeMessage(id), ttlSeconds.value * 1000)
+  _timers.set(id, t)
+}
+
+function removeMessage(id: string) {
+  messages.value = messages.value.filter((m) => m.id !== id)
+  const t = _timers.get(id)
+  if (t !== undefined) clearTimeout(t)
+  _timers.delete(id)
+}
+
+function clearAllTimers() {
+  for (const t of _timers.values()) clearTimeout(t)
+  _timers.clear()
+}
+
 const showPlatform = computed(() => {
   const raw = getQueryString('showPlatform')
   if (raw !== undefined) return raw === '1' || raw === 'true'
@@ -118,6 +149,25 @@ const theme = computed(() => {
 })
 
 const themeClass = computed(() => `theme-${theme.value}`)
+
+function cssColor(value: string | undefined, fallback: string) {
+  if (!value) return fallback
+  const v = value.trim()
+  if (!v) return fallback
+  return v
+}
+
+const accent = computed(() => cssColor(getParam('accent', 'accent'), '#a970ff'))
+const accent2 = computed(() => cssColor(getParam('accent2', 'accent2'), '#00dc82'))
+
+const animate = computed(() => getBool('animate', 'animate', false))
+
+const rootVars = computed(() => {
+  return {
+    '--accent': accent.value,
+    '--accent2': accent2.value
+  } as Record<string, string>
+})
 
 function platformLabel(platform: Platform) {
   if (platform === 'twitch') return 'TW'
@@ -160,6 +210,8 @@ function connect() {
         timestamp: Date.now()
       }
     ]
+    // schedule removal for the system info message as well (always)
+    scheduleRemoval('system-no-config')
     return
   }
 
@@ -171,6 +223,13 @@ function connect() {
       if (!msg || typeof msg.id !== 'string') return
 
       messages.value = [...messages.value, msg].slice(-maxMessages.value)
+
+      // system messages always auto-remove; other messages follow `autoRemove`
+      if (msg.platform === 'system') {
+        scheduleRemoval(msg.id)
+      } else if (autoRemove.value) {
+        scheduleRemoval(msg.id)
+      }
 
       void nextTick(() => {
         if (!scroller.value) return
@@ -191,12 +250,14 @@ watch(
   () => route.fullPath,
   () => {
     messages.value = []
+    clearAllTimers()
     connect()
   }
 )
 
 onBeforeUnmount(() => {
   es?.close()
+  clearAllTimers()
 })
 </script>
 
@@ -204,7 +265,7 @@ onBeforeUnmount(() => {
 .overlay {
   width: 100vw;
   height: 100vh;
-  background: transparent;
+  background: rgb(0 0 0 / 20%);
   overflow: hidden;
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
 }
@@ -221,6 +282,7 @@ onBeforeUnmount(() => {
 
 .msg {
   display: inline-flex;
+  flex-wrap: wrap;
   align-items: baseline;
   gap: 8px;
   padding: 10px 12px;
@@ -244,6 +306,7 @@ onBeforeUnmount(() => {
 }
 
 .author {
+  flex-shrink: 0;
   font-weight: 800;
 }
 
@@ -257,7 +320,7 @@ onBeforeUnmount(() => {
 
 /* Themes */
 .theme-dark .msg {
-  background: rgba(10, 10, 14, 0.55);
+  background: rgba(10, 10, 14, 0.3);
   color: rgba(255, 255, 255, 0.92);
 }
 
@@ -286,5 +349,59 @@ onBeforeUnmount(() => {
 
 .theme-light .msg.system {
   background: rgba(255, 255, 255, 0.55);
+}
+
+/* Panel styling */
+.chat {
+  border-radius: 22px;
+  border: 2px solid;
+  border-color: color-mix(in oklab, var(--accent) 70%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--accent2) 35%, transparent),
+    0 0 30px color-mix(in oklab, var(--accent) 14%, transparent);
+  position: relative;
+}
+
+.chat::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 22px;
+  padding: 10px;
+  background:
+    radial-gradient(1200px 320px at 12% 0%, color-mix(in oklab, var(--accent2) 22%, transparent), transparent 65%),
+    radial-gradient(900px 280px at 95% 10%, color-mix(in oklab, var(--accent) 18%, transparent), transparent 55%);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  pointer-events: none;
+  opacity: 0.9;
+  box-sizing: border-box;
+  z-index: -1;
+}
+
+.chat.animate {
+  animation: chat-glow 3.2s ease-in-out infinite;
+}
+
+.chat.animate::before {
+  animation: chat-shimmer 4.8s ease-in-out infinite;
+}
+
+@keyframes chat-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 0px color-mix(in oklab, var(--accent) 0%, transparent));
+  }
+  50% {
+    filter: drop-shadow(0 0 14px color-mix(in oklab, var(--accent) 28%, transparent));
+  }
+}
+
+@keyframes chat-shimmer {
+  0%, 100% {
+    opacity: 0.75;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 </style>
